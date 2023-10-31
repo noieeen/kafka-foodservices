@@ -36,7 +36,7 @@ const run = async () => {
 
         // start pipeline
 
-        producer.send({
+        producer.sendBatch({
 
           topic: CONFIRMED_ORDER_TOPIC.concat('-email'),
           messages: [
@@ -53,7 +53,7 @@ const run = async () => {
         });
 
         
-        producer.send({
+        producer.sendBatch({
 
           topic: CONFIRMED_ORDER_TOPIC.concat('-analytic'),
           messages: [

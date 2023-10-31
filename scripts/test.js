@@ -11,7 +11,7 @@ import {
 } from "https://jslib.k6.io/k6-utils/1.4.0/index.js";
 
 const baseUrl = "http://host.docker.internal:8000";
-const numRequests = 1000;
+const numRequests = 100000;
 export default function () {
   for (let orderId = 1; orderId <= numRequests; orderId++) {
     // const orderId = 1;
