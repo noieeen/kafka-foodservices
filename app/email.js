@@ -1,6 +1,6 @@
 const { Kafka } = require("kafkajs");
 
-const TOPIC = "order-confirmed-analytic";
+const TOPIC = "order-confirmed-email";
 
 const kafka = new Kafka({
   clientId: "my-app",
@@ -9,28 +9,22 @@ const kafka = new Kafka({
 
 const consumer = kafka.consumer({ groupId: TOPIC });
 
-let totalOrderCount = 0;
-let totalRevenue = 0;
-
 const run = async () => {
-  console.log("analytic waiting kafka...");
+  console.log("email waiting kafka...");
   await consumer.connect();
 
   await consumer.subscribe({
     topic: TOPIC,
     fromBeginning: true,
   });
-  console.log("analytic kafka ready...");
+  console.log("email kafka ready...");
   await consumer.run({
     partitionsConsumedConcurrently:2,
     eachMessage: async ({ topic, partition, message }) => {
       try {
         const body = JSON.parse(message.value);
-
-        totalOrderCount += body.amount;
-        totalRevenue += body.price;
-        console.log("total order count: ", totalOrderCount);
-        console.log("total Revenue", totalRevenue);
+        console.log("sent email to: ", body.userId);
+        console.log("sent email successful");
       } catch (error) {}
     },
   });
