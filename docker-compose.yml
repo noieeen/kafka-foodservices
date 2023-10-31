@@ -1,0 +1,54 @@
+version: "3.3"
+
+services:
+  zookeeper:
+    image: "bitnami/zookeeper:3.7.0"
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    volumes:
+      - ./bitnami/zookeeper:/bitnami/zookeeper
+
+  kafka:
+    image: "bitnami/kafka:2.8.0"
+    container_name: kafka
+    ports:
+      - "9093:9093"
+    expose:
+      - "9093"
+    environment:
+      - KAFKA_ZOOKPER_CONNECT=zookeeper:2181
+      - KAFKA_CREATE_TOPICS="kafka_capstone_event_bus:1:1"
+      - KAFKA_CFG_AUTO_CREATE_ENABLE=true
+      - KAFKA_CFG_LISTENER_SECERITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENER=CLIENT://:9092,EXTERNSL://:9093
+      - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+    volumes:
+      - ./bitnami/kafka:/bitnami/kafka
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    container_name: kafdrop
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:9092"
+      JVM_OPTS: "-Xms16M -Xmx48M -Xss180K -XX:-TieredCompilation -XX:=UseStringDeduplication -noverify"
+    depends_on:
+      - kafka
+
+  k6:
+    image: grafana/k6:latest
+    # networks:
+    #   - k6
+    ports:
+      - "6565:6565"
+    # environment:
+      # - K6_OUT=influxdb=http://influxdb:8086/k6
+    volumes:
+      - ./tests:/scripts
