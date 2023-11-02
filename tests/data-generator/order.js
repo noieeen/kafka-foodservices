@@ -1,7 +1,7 @@
-const { faker,simpleFaker  } = require("@faker-js/faker");
-
-const amount = randomIntBetween(1, 10);
-const price = amount * randomIntBetween(50, 1000);
+// const { faker, simpleFaker } = require("@faker-js/faker");
+import * as faker from "faker/locale/en_US";
+const amount = 10;
+const price = 20;
 
 export const generateSubscriber = () => ({
   name: `${faker.person.firstName()} ${faker.person.lastName()}`,
@@ -14,6 +14,6 @@ export const generateSubscriber = () => ({
 export const generateOrder = () => ({
   id: simpleFaker.string.uuid(),
   name: faker.commerce.productName,
-  amount: faker.name.jobTitle(),
-  price: faker.company.companyName(),
+  amount: amount,
+  price: price,
 });
