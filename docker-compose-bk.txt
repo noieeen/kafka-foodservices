@@ -1,0 +1,60 @@
+version: "3.3"
+
+services:
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper
+    hostname: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    volumes:
+      - ./volumes/zookeeper:/bitnami/zookeeper
+      - ./volumes/zookeeper/datalog:/datalog
+
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka1
+    hostname: kafka1
+    ports:
+      - "9091:9091"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka1:19091,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9091
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+    volumes:
+      - ./volumes/kafka1:/bitnami/kafka
+    # kafdrop:
+    #   image: obsidiandynamics/kafdrop
+    #   restart: "no"
+    #   ports:
+    #     - "9000:9000"
+    #   environment:
+    #     KAFKA_BROKERCONNECT: "localhost:9092"
+    #     JVM_OPTS: "-Xms16M -Xmx48M -Xss180K -XX:-TieredCompilation -XX:+UseStringDeduplication -noverify"
+    #   depends_on:
+    #     - kafka
+
+    # k6:
+    #   image: grafana/k6:latest
+    #   # networks:
+    #   #   - k6
+    #   ports:
+    #     - "6565:6565"
+    #     # environment:
+    #     # - K6_OUT=influxdb=http://influxdb:8086/k6
+    #   volumes:
+    #     - ./tests:/scripts
+  k6:
+    image: loadimpact/k6
+    container_name: k6
+    # environment:
+    #   - K6_OUT=influxdb=http://influxdb:8086/k6
+    volumes:
+      - ./tests:/scripts

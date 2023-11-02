@@ -1,23 +1,20 @@
-const { Kafka } = require("kafkajs");
+const { kafka } = require("./libs/kafka");
 
 const KAFKA_TOPIC = "food-order";
-const CONFIRMED_ORDER_TOPIC = "order-confirmed";
+const CONFIRMED_ORDER_TOPIC_EMAIL = "order-confirmed_email";
+const CONFIRMED_ORDER_TOPIC_ANALYTIC = "order-confirmed_analytic";
 
-const kafka = new Kafka({
-  clientId: "my-app",
-  brokers: ["localhost:9092", "localhost:9093"],
-});
+const producer1 = kafka.producer();
 
-const producer = kafka.producer({
-  groupId: CONFIRMED_ORDER_TOPIC,
-});
+const producer2 = kafka.producer();
 
 const consumer = kafka.consumer({ groupId: KAFKA_TOPIC });
 
 const run = async () => {
   console.log("transaction waiting kafka...");
   await consumer.connect();
-  await producer.connect();
+  await producer1.connect();
+  await producer2.connect();
 
   // consumer.on("ready", () => {
   //   console.log("transaction kafka ready...");
@@ -32,65 +29,42 @@ const run = async () => {
       try {
         const order = JSON.parse(message.value);
 
-        console.log("transaction successful");
-
         // start pipeline
+        producer1
+          .send({
+            topic: CONFIRMED_ORDER_TOPIC_EMAIL,
+            messages: [
+              {
+                value: JSON.stringify({
+                  orderId: order.orderId,
+                  userId: order.userId,
+                  amount: order.orderAmount,
+                  price: order.orderPrice,
+                }),
+              },
+            ],
+          })
+          .catch((error) => {
+            throw new Error(error);
+          });
 
-        producer.sendBatch({
-
-          topic: CONFIRMED_ORDER_TOPIC.concat('-email'),
-          messages: [
-            {
-              value: JSON.stringify({
-                orderId: order.orderId,
-                userId: order.userId,
-                transaction: `transaction-${order.orderId}`,
-                amount: order.orderAmount,
-                price: order.orderPrice,
-              }),
-            },
-          ],
-        });
-
-        
-        producer.sendBatch({
-
-          topic: CONFIRMED_ORDER_TOPIC.concat('-analytic'),
-          messages: [
-            {
-              value: JSON.stringify({
-                orderId: order.orderId,
-                userId: order.userId,
-                transaction: `transaction-${order.orderId}`,
-                amount: order.orderAmount,
-                price: order.orderPrice,
-              }),
-            },
-          ],
-        });
-
-        // producer.producer(
-        //   CONFIRMED_ORDER_TOPIC,
-        //   -1, // Automatically choose a partition
-        //   Buffer.from(
-        //     JSON.stringify({
-        //       orderId: order.orderId,
-        //       userId: order.userId,
-        //       transaction: `transaction-${order.orderId}`,
-        //       amount: order.orderAmount,
-        //       price: order.orderPrice,
-        //     })
-        //   ),
-        //   null, // Key, set to null for automatic partitioning
-        //   Date.now(), // Timestamp (can be set to null or omitted)
-        //   (err, offset) => {
-        //     if (err) {
-        //       reject(err);
-        //     } else {
-        //       resolve(offset);
-        //     }
-        //   }
-        // );
+        producer2
+          .send({
+            topic: CONFIRMED_ORDER_TOPIC_ANALYTIC,
+            messages: [
+              {
+                value: JSON.stringify({
+                  orderId: order.orderId,
+                  userId: order.userId,
+                  amount: order.orderAmount,
+                  price: order.orderPrice,
+                }),
+              },
+            ],
+          })
+          .catch((error) => {
+            throw new Error(error);
+          });
 
         console.log({
           orderId: order.orderId,

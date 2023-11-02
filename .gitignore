@@ -1,2 +1,3 @@
-/app/node_modules
-/bitnami
+node_modules
+/volumes
+/data

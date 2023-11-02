@@ -1,16 +1,11 @@
 const express = require("express");
-const { Kafka } = require("kafkajs");
+const { kafka } = require("./libs/kafka");
 
 const app = express();
 app.use(express.json());
 const port = 8000;
 
 const TOPIC = "food-order";
-
-const kafka = new Kafka({
-  clientId: "my-app",
-  brokers: ["localhost:9101","localhost:9092", "localhost:9093"],
-});
 
 const producer = kafka.producer();
 
